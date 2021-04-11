@@ -27,20 +27,21 @@ module Parser (
 , parse
 ) where
 
-import qualified Data.Map.Strict                      as M
+import qualified Data.Map.Strict as M
 import           Data.Maybe
 import           Text.ParserCombinators.Parsec
-import qualified Text.ParserCombinators.Parsec.Char   as PC
+import qualified Text.ParserCombinators.Parsec.Char as PC
 import qualified Text.ParserCombinators.Parsec.Number as PN
+
 import           NumericPrelude
 
-import Ray.Algebra
-import Ray.Geometry
-import Ray.Light
-import Ray.Material
-import Ray.Object
-import Ray.Optics
-import Ray.Physics
+import           Ray.Algebra
+import           Ray.Geometry
+import           Ray.Light
+import           Ray.Material
+import           Ray.Object
+import           Ray.Optics
+import           Ray.Physics
 
 --
 -- RESERVED WORD

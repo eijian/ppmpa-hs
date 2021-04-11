@@ -13,14 +13,14 @@ module Ray.Light (
 ) where
 
 --import System.Random
-import System.Random.Mersenne as MT
-import Data.Maybe
-import NumericPrelude
+import          Data.Maybe
+import          NumericPrelude
+import          System.Random.Mersenne as MT
 
-import Ray.Algebra
-import Ray.Geometry
-import Ray.Physics
-import Ray.Optics
+import          Ray.Algebra
+import          Ray.Geometry
+import          Ray.Optics
+import          Ray.Physics
 
 type Flux = Double
 

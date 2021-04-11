@@ -7,8 +7,8 @@ module Ray.Object (
 , initObject
 ) where
 
-import Ray.Geometry
-import Ray.Material
+import          Ray.Geometry
+import          Ray.Material
 
 data Object = Object Shape Material deriving (Eq, Show)
 

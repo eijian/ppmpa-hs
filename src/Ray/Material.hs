@@ -23,8 +23,8 @@ import           Control.DeepSeq
 import           Control.DeepSeq.Generics (genericRnf)
 import           GHC.Generics
   
-import Ray.Physics
-import Ray.Optics
+import           Ray.Optics
+import           Ray.Physics
 
 -- CONSTANTS
 

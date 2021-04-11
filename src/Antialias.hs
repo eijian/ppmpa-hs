@@ -10,13 +10,13 @@ module Antialias (
 ) where
 
 import qualified Data.Vector as V
-import NumericPrelude
+import           NumericPrelude
 
-import Ray.Geometry
-import Ray.Optics
-import Ray.Physics
+import           Camera
+import           Ray.Geometry
+import           Ray.Optics
+import           Ray.Physics
 
-import Screen
 
 --
 -- CONSTANTS
@@ -42,7 +42,7 @@ bmagcolor = Color bmag bmag bmag
 markGreen :: Radiance
 markGreen = Radiance 0.0 1.0 0.0
 
-smooth :: (Ray -> IO Radiance) -> Screen -> V.Vector Rgb -> Int -> IO Rgb
+smooth :: (Ray -> IO Radiance) -> Camera -> V.Vector Rgb -> Int -> IO Rgb
 smooth tracer scr ims i
   | antialias scr == False            = return (ims V.! i)
   | isDifferent i ims offset == False = return (ims V.! i)
@@ -53,7 +53,7 @@ smooth tracer scr ims i
     xr = xreso scr
     offset = [-xr-1, -xr, -xr+1, -1, 1, xr-1, xr, xr+1]
 
-smooth2 :: (Ray -> IO Radiance) -> Screen -> V.Vector Radiance -> Int
+smooth2 :: (Ray -> IO Radiance) -> Camera -> V.Vector Radiance -> Int
         -> IO Radiance
 smooth2 tracer scr ims i = return (ims V.! i)
 {-
@@ -79,7 +79,7 @@ avg' ((r1, g1, b1):ls) = (r1 + r2, g1 + g2, b1 + b2)
   where
     (r2, g2, b2) = avg' ls
 
-avg2 :: Screen -> [Radiance] -> Radiance
+avg2 :: Camera -> [Radiance] -> Radiance
 avg2 scr ls = bmagcolor <**> (sum ls)
 --avg2 scr ls = rgbToRadiance scr (avg $ map (radianceToRgb scr) ls)
     
@@ -125,7 +125,7 @@ diffRgb (r1, g1, b1) (r2, g2, b2) =
     abs :: Int -> Int
     abs i = if i < 0 then (-i) else i
     
-retrace :: (Ray -> IO Radiance) -> Screen -> Int -> IO [Radiance]
+retrace :: (Ray -> IO Radiance) -> Camera -> Int -> IO [Radiance]
 retrace tracer scr p = do
   let p' = ( fromIntegral (p `div` (xreso scr))
            , fromIntegral (p `mod` (xreso scr)))

@@ -9,21 +9,20 @@ module Scene (
 , readScene
 ) where
 
-import Data.List
-import Data.Maybe
+import           Data.List
 import qualified Data.Map.Strict as M
+import           Data.Maybe
 import qualified Data.Vector as V
-import NumericPrelude
+import           NumericPrelude
 
-import Ray.Algebra
-import Ray.Geometry
-import Ray.Light
-import Ray.Physics
-import Ray.Optics
-import Ray.Object
-import Ray.Material
-
-import Parser
+import           Parser
+import           Ray.Algebra
+import           Ray.Geometry
+import           Ray.Light
+import           Ray.Material
+import           Ray.Object
+import           Ray.Optics
+import           Ray.Physics
 
 --
 -- CONSTANTS

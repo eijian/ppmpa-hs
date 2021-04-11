@@ -7,7 +7,7 @@ require 'logger'
 
 USAGE = 'iterator.rb <#photon> <#iteration> <radius(m)> <screen(.scr)> <scene(.scene)>'
 
-CMD = "cabal new-exec "
+CMD = "stack exec "
 PM = "#{CMD}pm"
 RT = "#{CMD}rt"
 
@@ -86,7 +86,7 @@ end
 
 def mk_image(i, tscrf)
   ppmf = @tmpdir + IMGF + "#{sprintf("%04d", i)}.ppmf"
-  cmd = "#{PM} #{tscrf} #{@scene} | #{RT} #{tscrf} #{@scene} > #{ppmf}"
+  cmd = "#{PM} #{@scene} #{@nphoton} | #{RT} #{tscrf} #{@scene} #{@radius[i]} > #{ppmf}"
   system cmd
 end
 

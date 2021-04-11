@@ -22,10 +22,11 @@ module Ray.Geometry (
 , methodMoller
 ) where
 
-import Data.Maybe
-import NumericPrelude
+import          Data.Maybe
+import          NumericPrelude
 
-import Ray.Algebra
+import          Ray.Algebra
+
 
 type Ray = (Position3, Direction3)
 

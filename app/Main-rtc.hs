@@ -6,13 +6,13 @@
 
 module Main where
 
-import Control.Monad
+import           Control.Monad
 import qualified Data.Vector as V
 
-import Scene
-import Screen
-import Tracer
-import Antialias
+import           Antialias
+import           Scene
+import           Screen
+import           Tracer
 
 main :: IO ()
 main = do

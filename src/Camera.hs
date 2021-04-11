@@ -1,13 +1,13 @@
 {-# LANGUAGE NoImplicitPrelude #-}
 
 --
--- Screen module
+-- Camera module
 --
 
-module Screen (
+module Camera (
   Rgb
-, Screen(..)
-, readScreen
+, Camera(..)
+, readCamera
 , rgbToString
 , rgbToText
 , radianceToString
@@ -18,16 +18,15 @@ module Screen (
 --import          Control.Monad
 import           Data.Maybe
 import qualified Data.Map.Strict as M
-import qualified Data.Text       as T
+import qualified Data.Text as T
 import qualified Data.Vector as V
 import           NumericPrelude
 import qualified System.Random.Mersenne as MT
 
+import           Parser
 import           Ray.Algebra
 import           Ray.Geometry
 import           Ray.Optics
-
-import           Parser
 
 --
 -- TYPES
@@ -35,15 +34,16 @@ import           Parser
 
 type Rgb = (Int, Int, Int)
 
-data Screen = Screen
-  { nphoton             :: Int
-  , progressive         :: Bool
+data Camera = Camera
+  {
+  -- nphoton             :: Int
+    progressive         :: Bool
   , xreso               :: Int
   , yreso               :: Int
   , antialias           :: Bool
   , nSamplePhoton       :: Int
-  , useClassicForDirect :: Bool
-  , radius              :: Double
+  --, useClassicForDirect :: Bool
+  --, radius              :: Double
   , pfilter             :: PhotonFilter
   , ambient             :: Radiance
   , maxradiance         :: Double
@@ -51,6 +51,7 @@ data Screen = Screen
   , eyeDir              :: Direction3
   , focus               :: Double
   , screenMap           :: V.Vector (Double, Double)
+  , useblur             :: Bool
   , pnmHeader           :: [String]
   , radianceToRgb       :: Radiance -> Rgb
   , generateRay         :: (Double, Double) -> IO Ray
@@ -89,8 +90,8 @@ defconf = M.fromList [
 -- PUBLIC FUNCTIONS
 --
 
-readScreen :: String -> IO Screen
-readScreen file = do
+readCamera :: String -> IO Camera
+readCamera file = do
   lines <- readConfig file
   let
     -- input params
@@ -103,7 +104,7 @@ readScreen file = do
     antialias   = read (conf M.! rAntialias     ) :: Bool
     samphoton   = read (conf M.! rSamplePhoton  ) :: Int
     useclassic  = read (conf M.! rUseClassic    ) :: Bool
-    radius      = read (conf M.! rEstimateRadius) :: Double
+    --radius      = read (conf M.! rEstimateRadius) :: Double
     amb         = read (conf M.! rAmbient       ) :: Radiance
     maxrad      = read (conf M.! rMaxRadiance   ) :: Double
     eyepos      = read (conf M.! rEyePosition   ) :: Vector3
@@ -112,6 +113,7 @@ readScreen file = do
     focus       = read (conf M.! rFocus         ) :: Double
     pfilt       = read (conf M.! rPhotonFilter  ) :: PhotonFilter
 
+    useblur = False
     focallen = 50.0 / 1000 :: Double  -- 焦点距離 50mm
     fnumber  = 5.0 :: Double          -- F/5.0
 
@@ -121,16 +123,16 @@ readScreen file = do
       y <- [0..(yres - 1)], x <- [0..(xres - 1)]]  
     eyedir = fromJust $ normalize (targetpos - eyepos)
     fgenray = makeGenerateRay antialias progressive eyepos targetpos xres yres upper focus focallen fnumber
-    radius2 = radius * radius
-    scr = Screen
-      nphoton
+    --radius2 = radius * radius
+    cam = Camera
+      --nphoton
       progressive
       xres
       yres
       antialias    -- anti aliasing on/off
       samphoton    -- nSamplePhoton
-      useclassic   -- useClassicForDirect
-      radius2      -- radius for radiance estimate
+      --useclassic   -- useClassicForDirect
+      --radius2      -- radius for radiance estimate
       pfilt        -- filter for photon gathering
       amb          -- ambient radiance
       maxrad
@@ -138,10 +140,11 @@ readScreen file = do
       eyedir
       focus
       smap         -- screen map
+      useblur
       fheader      -- func to generate header of PNM format
       fmaxrad      -- func to convert from radiance to rgb
       fgenray      -- func to generate rays
-  return scr
+  return cam
 
 rgbToString :: Rgb -> String
 rgbToString (r, g, b) = show r ++ " " ++ show g ++ " " ++ show b
@@ -155,13 +158,13 @@ radianceToString (Radiance r g b) = show r ++ " " ++ show g ++ " " ++ show b
 radianceToText :: Radiance -> T.Text
 radianceToText (Radiance r g b) = T.pack (show r ++ " " ++ show g ++ " " ++ show b)
 
-rgbToRadiance :: Screen -> Rgb -> Radiance
-rgbToRadiance scr (r, g, b) =
+rgbToRadiance :: Camera -> Rgb -> Radiance
+rgbToRadiance cam (r, g, b) =
   Radiance (fromIntegral r * mag)
            (fromIntegral g * mag)
            (fromIntegral b * mag)
   where
-    mag = maxradiance scr / rgbmax
+    mag = maxradiance cam / rgbmax
 --
 -- PRIVATE FUNCTIONS
 --
@@ -185,7 +188,7 @@ parseLines :: [String] -> [Param]
 parseLines []     = []
 parseLines (l:ls) = p:(parseLines ls)
   where
-    p = case (parse sline "rt screen file parse error" l) of
+    p = case (parse sline "rt camera file parse error" l) of
         Left  e  -> error $ (show e ++ "\nLINE: " ++ l)
         Right p' -> p'
 

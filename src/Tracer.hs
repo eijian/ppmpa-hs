@@ -26,16 +26,15 @@ import           Data.Ord
 import qualified Data.Vector as V
 import           NumericPrelude
 
-import Ray.Algebra
-import Ray.Geometry
-import Ray.Object
-import Ray.Light
-import Ray.Material
-import Ray.Physics
-import Ray.Optics
-
-import Screen
-import Scene
+import           Camera
+import           Scene
+import           Ray.Algebra
+import           Ray.Geometry
+import           Ray.Light
+import           Ray.Material
+import           Ray.Object
+import           Ray.Optics
+import           Ray.Physics
 
 --
 -- CONSTANTS
@@ -122,15 +121,15 @@ reflectTrans uc m0 os l wl ed (p, n, m) c0 = do
 -- RAY TRACING WITH PHOTON MAP
 -----
 
-traceRay :: Screen -> Material -> Int -> PhotonMap
-         -> V.Vector Object -> V.Vector Light -> Ray -> IO Radiance
-traceRay _    _   10 _     _     _     _  = return radiance0
-traceRay !scr !m0 !l !pmap !objs !lgts !r
+traceRay :: Camera -> Material -> Int -> V.Vector Object -> V.Vector Light
+         -> PhotonMap -> Double -> Bool -> Ray -> IO Radiance
+traceRay _    _   10 _     _     _     _       _   _  = return radiance0
+traceRay !cam !m0 !l !objs !lgts !pmap !radius !uc !r
   | is == Nothing = return radiance0
   | otherwise     = do
     si <- if df == 1.0 || f == black
       then return radiance0
-      else traceRay scr m0 (l+1) pmap objs lgts (initRay p rdir)
+      else traceRay cam m0 (l+1) objs lgts pmap radius uc (initRay p rdir)
     ti <- if f' == black || ior1 == 0.0
       then return radiance0
       else do
@@ -138,7 +137,7 @@ traceRay !scr !m0 !l !pmap !objs !lgts !r
           ior0 = averageIor m0
           (tdir, ior') = specularRefraction ior0 ior1 cos0 (getDir r) n
           m0' = if tdir <.> n < 0.0 then m else m_air
-        traceRay scr m0' (l+1) pmap objs lgts (initRay p tdir)
+        traceRay cam m0' (l+1) objs lgts pmap radius uc (initRay p tdir)
     si `deepseq` ti `deepseq` return 
       (sr_half    *> emittance m +
        df         *> brdf m (di + ii) +
@@ -146,10 +145,10 @@ traceRay !scr !m0 !l !pmap !objs !lgts !r
   where
     is = calcIntersection r objs
     (p, n, m) = fromJust is
-    di = if useClassicForDirect scr
+    di = if uc
       then foldl (+) radiance0 $ V.map (getRadianceFromLight objs p n) lgts
       else radiance0
-    ii = estimateRadiance scr pmap (p, n, m)
+    ii = estimateRadiance radius cam pmap (p, n, m)
     (rdir, cos0) = specularReflection n (getDir r)
     df = diffuseness m
     mt = metalness m
@@ -157,8 +156,8 @@ traceRay !scr !m0 !l !pmap !objs !lgts !r
     f' = negateColor f                         -- this means '1 - f'
     ior1 = averageIor m
 
-estimateRadiance :: Screen -> PhotonMap -> Intersection -> Radiance
-estimateRadiance scr pmap (p, n, m)
+estimateRadiance :: Double -> Camera -> PhotonMap -> Intersection -> Radiance
+estimateRadiance radius cam pmap (p, n, m)
   | V.null ps = radiance0
   | otherwise = (one_pi / rmax * (power pmap)) *> rad -- 半径は指定したものを使う
   where
@@ -166,13 +165,13 @@ estimateRadiance scr pmap (p, n, m)
     ps = V.fromList $ (inradius pmap) $ photonDummy p
     -- rs = ps `deepseq` map (\x -> norm ((photonPos x) - p)) ps
     --rmax = maximum rs
-    rmax = radius scr
+    rmax = radius
     -- sumfunc = case (pfilter scr) of
     --             Nonfilter   -> sumRadiance1
     --             Conefilter  -> sumRadiance2
     --             Gaussfilter -> sumRadiance3
     -- rad = sumfunc p n (power pmap) rmax rs ps
-    f_wait = case (pfilter scr) of
+    f_wait = case (pfilter cam) of
       Nonfilter   -> filter_none rmax
       Conefilter  -> filter_cone rmax
       Gaussfilter -> filter_gauss rmax
@@ -270,12 +269,12 @@ sumRadiance3 _ n pw rmax rs ps = rds `deepseq` rad
 -- CLASICAL RAY TRACING
 ------
 
-traceRay' :: Screen -> Int -> V.Vector Light -> V.Vector Object -> Ray -> IO Radiance
-traceRay' !scr l lgts objs r
+traceRay' :: Camera -> Int -> V.Vector Light -> V.Vector Object -> Ray -> IO Radiance
+traceRay' !cam l lgts objs r
   | is == Nothing = return radiance0
   | otherwise     = return (
                     sr_half *> emittance m
-                  + brdf m (radDiff + (ambient scr))
+                  + brdf m (radDiff + (ambient cam))
                   )
   where
     is = calcIntersection r objs
