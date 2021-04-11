@@ -2,7 +2,7 @@
 
 Progressive Photon Mapping method of ray tracing with Probablic Approach
 
-(paper)[http://www.cs.jhu.edu/~misha/ReadingSeminar/Papers/Knaus11.pdf]
+* [paper](http://www.cs.jhu.edu/~misha/ReadingSeminar/Papers/Knaus11.pdf)
 
 
 
